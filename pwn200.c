@@ -13,7 +13,8 @@ int main()
 {
     char buf[100] = "Welcome to XDCTF2015~!\n";
     setbuf(stdout, buf);
-    write(1, buf, strlen(buf));
+    int len = strlen(buf);
+    write(1, buf, len);
     vuln();
     return 0;
 };

